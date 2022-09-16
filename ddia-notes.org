@@ -1,0 +1,5 @@
+* Part 1: Foundations of Data Systems
+** Chapter 1: Reliable, Scalable, and Maintanable Applications
+** Chapter 2: Data Models and Query Languages
+** Chapter 3: Storage and Retrieval
+** Chapter 4: Encoding and Evolution
