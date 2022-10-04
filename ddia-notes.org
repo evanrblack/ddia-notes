@@ -86,9 +86,43 @@ This chapter focuses on the different data models, and how it affects our repres
 
 *** Relational Model Versus Document Model
 
+Originally, people were unsure if relational databases could be implemented efficiently. Competitors have come and gone, while the relational model has stayed with us.
+
+NoSQL (retroactively changed to mean "Not Only SQL") is yet another model. They focus on offering greater scalability and expressivity compared to existing implementations of the relational model.
+
+In OOP languages, there is an impedance mismatch that occurs between how data is stored and retrieved from a relational database.
+
+The relational model is a good fit when many disparate entries will share unified data (many-to-one), whereas the document model will work better in situations where data is not semantically shared between entries (one-to-many).
+
+NoSQL's document model seems somewhat similar to the out-moded hierarchical model. Dissatisfaction with this old model gave rise to the relational model and the network model.
+
+The network model was also used for a time, but difficulties in querying and modifying data lead to its disuse. The relational model avoided these issues by leaving the "how" of its traversal to a query optimizer, the presence of which allows for this problem to be solved more generically than the network model.
+
+There are certain advantages to NoSQL's document model if your application data allows for it. Storing disconnected, nested data is simpler and the lack of a schema may make it easier to just roll-forward with data changes at the application level. Since multiple levels may be stored under a single document, you can avoid performance penalties from doing a join, as you would need to with SQL.
+
+With the introduction of things like XML and JSON values to Postgres, you may be able to reap the benefits of both models from one database.
+
 *** Query Languages for Data
 
+SQL is declarative, while the query language for IMS and CODASYL were imperative. This allows for the query optimizer to do its job. With SQL, you describe the "what" and the database figures out the "how".
+
+CSS is also declarative. Things would not be fun if it were imperative.
+
+MapReduce, which is a technique often utilized with NoSQL datastores, is a mix of both declarative and imperative. The imperative bits are restricted by being required to be pure; they can only operate on the data given to them.
+
+While there is great power in being able to write arbitrary javascript in a MapReduce function, it makes optimization difficult. MongoDB introduced a declarative "aggregation pipeline" feature to help with this, which uses JSON instead of something that looks like an english sentence. This feels a lot like SQL, still...
+
 *** Graph-Like Data Models
+
+The relational model gets unwieldy as things start to look more like a graph than a tree. Graph databases use vertices (a.k.a. nodes or entities) and edges (a.k.a. relationships or arcs) to represent graph-like data.
+
+There are two models for graph databases: property graph and triple store. The property graph model can offer great flexibility, as there is no schema enforcing the things that can be connected. It can store multiple properties on both vertices and edges. The triple store is similar, but much simpler, using declarations of (subject, predicate, object) to construct the graph. Something like the list of properties would have to be stored through a series of connections rather than on a vertex or edge directly.
+
+Cypher, SPARQL, and Datalog are some examples of graph query languages.
+
+(I've gone a bit light on this section, because it feels a bit too specific for this section of the book, and of limited worth when compressed.)
+
+You can see the document model and the graph model as two opposite sides. The document model excels when related data can be contained within a single document, whereas the graph model does well at making and traversing connections between separately stored things easy.
 
 ** Chapter 3: Storage and Retrieval
 ** Chapter 4: Encoding and Evolution
