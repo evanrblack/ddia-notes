@@ -1,5 +1,94 @@
+#+title: DDIA Notes
+#+author: Evan Black
+
 * Part 1: Foundations of Data Systems
 ** Chapter 1: Reliable, Scalable, and Maintanable Applications
+
+There are common building blocks of applications we can reuse, and should.
+
+- Database: Generic storage and retrieval
+- Cache: Speed up expensive operations by remembering results
+- Search Index: Allow users to search using keywords and filters
+- Stream Processing: Async message sending and receiving
+- Batch Processing: Periodic crunching of accumulated data
+
+We should look at the characteristics of these things and our requirements to determine the best option for our use-case.
+
+*** Thinking About Data Systems
+
+Increasing number of tools may seem similar from a high level, but have different strengths.
+e.g. Postgres and Redis both "store data", but they have very different use cases in mind.
+
+Nowadays, we stitch apps together with multiple tools, trying to leverage the best of each. The app's API will hide these implementation details.
+
+But now that data flows through all of these data systems, how can we make sure that things stay working in the face of errors in one of them? How can we keep things cons`istent?
+
+This book focuses on three concerns:
+
+- Reliability: Working correctly in the face of adversity.
+- Scalability: Dealing with growth in volume.
+- Maintainability: Keeping the top-level app and underlying code clean and understandable.
+
+*** Reliability
+
+Generally, reliability is about the app operating correctly even when encountering hardware, software, or user faults.
+
+A fault and a failure are different. Faults are smaller in scale, whereas a failure is complete. Fault-tolerance is the name of the game, to prevent faults from becoming failures.
+
+To counter hardware faults, you can add redundancy at the component level, e.g. multiple hard-drives, or at the machine level, e.g. AWS / cloud computing.
+
+Software faults are generally harder to fix, but testing things in isolation and monitoring guarantees of the system can go a long way.
+
+Human errors can be countered by applying multiple practices: well-designed abstractions / APIs, sandbox environments, layers of testing, easy data recovery, user telemetry, and training.
+
+Reliability is important, but it must be understood in the context of the app's purpose. Software for a busy online store would require a greater focus on reliability than a free app for making funny GIFs.
+
+*** Scalability
+
+When talking about scalability, speak with specific numbers in mind. You can't just say an app is or isn't scalable.
+
+One way to discuss is to pick a few key activities that induce "load", and then work in multiples of that data. If the app can handle X requests per second, then you can ask "What would it take to handle 5 times as many requests per second?"
+
+Twitter ran into trouble scaling out their app. Originally they implemented a global tweet table some, but then they switched to a fan-out messaging approach. Eventually, they settled on a hybrid approach, fan-out for small-time users, and global lookup for messages from popular users.
+
+Once able to describe the current load and some future load, you can ask questions like:
+
+- If we didn't scale up resources, how would things be affected?
+- If we wanted to offer the same response times, how many more resources would it take?
+
+In batch systems, we should care more about throughput. In user-facing systems, however, we should care more about response time. There will be great variance in either of them, so we need to speak statistically about their performance.
+
+For response times, instead of the average, you'll want to look at things like p95 or p99, which are like common worst-cases. True one-in-a-million outliers will likely not be worth optimizing for, though.
+
+(You should check out wrk2, which is a "constant throughput, correct latency recording" HTTP load generator.)
+
+To solve these scaling issues, you can scale up (bigger machine) or scale out (more machines). Usually the best solution is a pragmatic combination of both techniques.
+
+*** Maintainability
+
+Here are three design principles to keep in mind when doing maintenance:
+
+- Operability: Making it easy for the Ops team
+- Simplicity: Making it easy for new engineers to understand
+- Evolvability: Making it easy for engineers to make changes
+
+For operability, we can: add health monitoring to the app, make it easy to update, have useful error messages, and write good documentation.
+
+For simplicty, we can try to reduce complexity within the code by using good abstractions.
+
+To maintain good evolvability, you'll likely reach for a lot of the same things mentioned prior. This also involves organizational change, though, with placing greater emphasis on writing tests and implementing agile processes.
+
 ** Chapter 2: Data Models and Query Languages
+
+How we model our data informs how we approach solving our problems. Apps are generally composed of layers of data representations, e.g. the difference between an object in JS, a row in Postgres, and data on a disk.
+
+This chapter focuses on the different data models, and how it affects our representation and ability to query data.
+
+*** Relational Model Versus Document Model
+
+*** Query Languages for Data
+
+*** Graph-Like Data Models
+
 ** Chapter 3: Storage and Retrieval
 ** Chapter 4: Encoding and Evolution
