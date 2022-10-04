@@ -127,4 +127,11 @@ Cypher, SPARQL, and Datalog are some examples of graph query languages.
 You can see the document model and the graph model as two opposite sides. The document model excels when related data can be contained within a single document, whereas the graph model does well at making and traversing connections between separately stored things easy.
 
 ** Chapter 3: Storage and Retrieval
+*** Data Structures That Power Your Database
+*** Transaction Processing or Analytics?
+*** Column-Oriented Storage
+*** Summary
 ** Chapter 4: Encoding and Evolution
+*** Formats for Encoding Data
+*** Models of Dataflow
+*** Summary
