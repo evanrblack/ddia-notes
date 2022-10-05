@@ -127,11 +127,119 @@ Cypher, SPARQL, and Datalog are some examples of graph query languages.
 You can see the document model and the graph model as two opposite sides. The document model excels when related data can be contained within a single document, whereas the graph model does well at making and traversing connections between separately stored things easy.
 
 ** Chapter 3: Storage and Retrieval
+
+While the previous chapter presented an app developer's perspective on storing and retrieving data using a database, this chapter is about how the database itself goes about storing and retrieving data. Knowing how a database stores and retrieves data will pay dividends when you inevitably have to tune and manage it.
+
 *** Data Structures That Power Your Database
+**** Log-Structued Storage Engines
+
+Log-structured storage engines are a common type for databases. They simply append new data over time, using the most recently appended version. While it is fast for inserts, it is slow for reads, as you have to scan the file to find the most recent entry.
+To get around this, log-structured storage engines will use an index, which is a separate lookup structure used to speed up reads.
+
+One implementation of an index is a hash index. This hashes each of the entries by key along with an offset. This makes lookups much faster.
+
+Eventually, the data file may be split into multiple smaller files as time goes on. At some point, they may also be merged in a process called compaction, where only the most recent, non-deleted entries will be kept.
+
+Log-structured storage engines have a few benefits. Namely, writes are faster than writing in the middle of a file, compaction helps deal with fragmentation, and crash recovery can be simpler since you can just "play back" the changes. However, in order to be fast, the hash table must fit in memory.
+
+**** SSTables and LSM-Trees
+
+SSTables (Sorted String Tables) present an improvement over basic log-structured storage. While they must make additional effort to keep entries ordered upon insertion, things can be much more quickly compacted due to already being sorted. This sorting also eliminates the need for for a full index, since the entries themselves can just be binary-searched over using a sparse index.
+
+The general flow for an SSTable is:
+
+- When a write comes in, add to your in-memory balanced tree
+- When the in-memory tree gets too big, write out the whole thing to a file. New writes go to a new memtable.
+- To handle a read, try to find it in the current in-memory table, then look into previous segments as needed.
+- In the background, merge and compact the previous segment files.
+
+SSTables can suffer from data loss in the case of a crash, but just having a separate log with the most recent unserviced writes in the order received would cover you.
+
+The algorithm described in the previous bit is called an LSM-tree (Log-Structued Merge-Tree).
+
+There are many other things done to improve performance of LSM-trees, like using a bloom filter to more quickly determine if a key does not exist. Multiple approaches exist for determining how and when the SSTables are merged and compacted. In general, LSM-trees are very useful because they offer good performance for both reads and writes.
+
+**** B-Trees
+
+B-trees are much older than SSTables and LSM-trees, becoming "ubiquitous" by the 1980s. They, like SSTables, use sorted key-value pairs. B-trees, however, use fixed-size blocks (also called pages, usually 4 KB in size) instead of the append-only log-like files. These pages are what are read or written to one at a time as needed. They form a tree-like structure, with top-level pages pointing to lower-level ones (called leaf pages). The number of child pages per level is called the "branching factor", with real life DBs having ~500.
+
+B-trees help keep things balanced, by splitting pages as needed. This helps B-trees of with ~n~ entries keep a depth of ~O(log n)~.
+
+"A four level tree of 4 KB pages with a branching factor of 500 can store up to 256 TB."
+
+B-trees, unlike LSM-trees, modify these pages in the middle, and writes may involve changes to multiple levels within the tree. To keep things safe, a WAL (write-ahead log) is kept, and can be replayed in the case of a crash.
+
+Over time, B-trees have accrued additional optimizations, like copy-on-write schemes and keeping track of additional pointers between siblings.
+
+**** Comparing B-Trees and LSM-Trees
+
+It is difficult to give a win to either, as it is dependent on application requirements and the hardware in use. For best results, you'll likely need to do some experimentation.
+
+**** Other Indexing Structures
+
+Many databases support secondary indexes, which allow quicker reads over things not already covered by the primary index.
+
+The value associated to a key may be the row itself, or it could be a pointer to the row on the heap. The heap is useful when multiple secondary indexes are present, since they can all point to the same data instead of duplicating it.
+
+A covering index is a compromize between a clustered index (all row data in the index) and a nonclustered index (only references to the heap within the index).
+
+Multi-column indices are useful and have multiple implementations, like a concatenated index, or an R-tree.
+
+Fuzzy indexing allows for queries for similar words or close matches instead of exact ones.
+
+As RAM grows cheaper, in-memory databases can provide better performance than traditional databases, since they don't have to spend time encoding data to files.
+
 *** Transaction Processing or Analytics?
+
+There are two main, separate uses for databases: transaction processing or analytics.
+
+Transaction processing (also called OLTP (online transaction processing)) is generally concerned with creating, reading, and updating individual rows within the database. Things occuring within a transaction-proceessing context are generally in response to user actions, and are expected to be handled quickly.
+
+Analytics (also called OLAP (online analytics processing)) is more focuesed on the aggregation of data, and may be performed over an entire history of events, rather than a current state of things. This data is typically much larger, and worked on in bulk or through streams.
+
+Data-warehousing is the practice of shipping transactional data into a larger OLAP system. This allows a business to find actionable insights without bringing down OLTP systems with their queries.
+
+OLTP systems often have a star or snowflake pattern for their relations, where narrow tables are joined together to create wider ones as needed. OLAP systems may have tables that are hundreds of columns wide, with lots of repetition.
+
 *** Column-Oriented Storage
+
+Since most queries into these wide tables may only be looking to retrieve just a few columns, a column-oriented DB flips the script and stores whole columns together instead of rows. This makes performing aggregations on these columns much faster. Because of repetition, they compress pretty well, too.
+
+Sorting is advantageous for querying and compression, as long as sorting keys are chosen appropriately. e.g. Date and product ID for retail sales data.
+
+LSM-trees make updates to these column-oriented DBs possible.
+
 *** Summary
 ** Chapter 4: Encoding and Evolution
+
+When working with large-scale applications, we often need to maintain backwards and forwards compatibility of our data, so differing versions of the application code can coexist while changes are rolled out.
+
 *** Formats for Encoding Data
+
+While many programming languages may have their own specific encoding format, it is often better and safer to use standardize, language-agnostic formats.
+
+While JSON, XML, and CSV are pretty ubiquitous and easy to use, they have several downsides, generally around imprecise representations of certain data types like big numbers and dates, and some lack common means of enforcing a schema.
+
+Binary versions of JSON can be useful for cutting down on transmission sizes, but still lack enforcement of schema.
+
+Thrift and Protocol Buffers offer a schema-dependent solution. They have a common file format for expressing schemas, as well as code generation tools to make it easy to integrate with. Because of this schema focus, you must pay careful attention to backwards and forwards compatibility when modifying the schema over time.
+
+Avro uses an even more compact representation, removing fields entirely from the transmission itself. It also has rules for dealing with mismatched schemas between writer and reader, allowing things to just work in some situations.
+
+(Compared to the other two, Avro seems pretty neat! Still feels like we're getting a bit bogged down in the minutae of these different encoding formats, considering the relative age of the things.)
+
+In general, since we have tools that make schema enforcement easy without making schema evolution too difficult, we should look to utilize those tools instead of just saying "JSON is probably good enough".
+
 *** Models of Dataflow
-*** Summary
+
+Databases may apply schema modifications to the underlying data as needed when read, rather than across the board when it went into affect. e.g. Addition of a new column to schema, null is added when read.
+
+Archived data presents another challenge, as the schema stays the same as when it was originally archived. Reading it back to apply to a current schema can be tricky, but things like Avro can make it simpler.
+
+Web APIs should implement similar functionality to something like Avro, but at their larger scale, supporting a range of client ages as the surface of the API changes.
+
+REST (REpresentational State Transger) as a design philosophy offers several advantages over the complexity of SOAP and the falsehoods of RPC-like (Remote Procedure Call) structure. It doesn't hide the fact that it is a network protocol. While it is generally pretty good for public APIs, The overhead associated with REST may make it less appealing for internal messaging, where something closer to RPCs may be desirable.
+
+Message brokers present another means of transfering data, but generally fills a different use-case than REST or RPC. Generally these systems revolve around brokers, queues, and consumers.
+
+Distributed actor frameworks present an opportunity to make RPC's transparent by creating a system of message-passing between "actors". Things can then be scaled out on a single or multiple machines with little to no changes to the application code, as the messaging model covers both scenarios.
