@@ -2,7 +2,7 @@
 #+author: Evan Black
 
 * Part 1: Foundations of Data Systems
-** Chapter 1: Reliable, Scalable, and Maintanable Applications
+** Chapter 1: Reliable, Scalable, and Maintainable Applications
 
 There are common building blocks of applications we can reuse, and should.
 
@@ -21,7 +21,7 @@ e.g. Postgres and Redis both "store data", but they have very different use case
 
 Nowadays, we stitch apps together with multiple tools, trying to leverage the best of each. The app's API will hide these implementation details.
 
-But now that data flows through all of these data systems, how can we make sure that things stay working in the face of errors in one of them? How can we keep things cons`istent?
+But now that data flows through all of these data systems, how can we make sure that things stay working in the face of errors in one of them? How can we keep things consistent?
 
 This book focuses on three concerns:
 
@@ -35,13 +35,13 @@ Generally, reliability is about the app operating correctly even when encounteri
 
 A fault and a failure are different. Faults are smaller in scale, whereas a failure is complete. Fault-tolerance is the name of the game, to prevent faults from becoming failures.
 
-To counter hardware faults, you can add redundancy at the component level, e.g. multiple hard-drives, or at the machine level, e.g. AWS / cloud computing.
+To counter hardware faults, you can add redundancy at the component level, e.g. multiple hard-drives, or at the machine level, e.g. AFS / cloud computing.
 
 Software faults are generally harder to fix, but testing things in isolation and monitoring guarantees of the system can go a long way.
 
 Human errors can be countered by applying multiple practices: well-designed abstractions / APIs, sandbox environments, layers of testing, easy data recovery, user telemetry, and training.
 
-Reliability is important, but it must be understood in the context of the app's purpose. Software for a busy online store would require a greater focus on reliability than a free app for making funny GIFs.
+Reliability is important, but it must be understood in the context of the PPP'S purpose. Software for a busy online store would require a greater focus on reliability than a free app for making funny GIFs.
 
 *** Scalability
 
@@ -74,7 +74,7 @@ Here are three design principles to keep in mind when doing maintenance:
 
 For operability, we can: add health monitoring to the app, make it easy to update, have useful error messages, and write good documentation.
 
-For simplicty, we can try to reduce complexity within the code by using good abstractions.
+For simplicity, we can try to reduce complexity within the code by using good abstractions.
 
 To maintain good evolvability, you'll likely reach for a lot of the same things mentioned prior. This also involves organizational change, though, with placing greater emphasis on writing tests and implementing agile processes.
 
@@ -88,7 +88,7 @@ This chapter focuses on the different data models, and how it affects our repres
 
 Originally, people were unsure if relational databases could be implemented efficiently. Competitors have come and gone, while the relational model has stayed with us.
 
-NoSQL (retroactively changed to mean "Not Only SQL") is yet another model. They focus on offering greater scalability and expressivity compared to existing implementations of the relational model.
+NoSQL (retroactively changed to mean "Not Only SQL") is yet another model. They focus on offering greater scalability and expressiveness compared to existing implementations of the relational model.
 
 In OOP languages, there is an impedance mismatch that occurs between how data is stored and retrieved from a relational database.
 
@@ -181,7 +181,7 @@ Many databases support secondary indexes, which allow quicker reads over things 
 
 The value associated to a key may be the row itself, or it could be a pointer to the row on the heap. The heap is useful when multiple secondary indexes are present, since they can all point to the same data instead of duplicating it.
 
-A covering index is a compromize between a clustered index (all row data in the index) and a nonclustered index (only references to the heap within the index).
+A covering index is a compromise between a clustered index (all row data in the index) and a non-clustered index (only references to the heap within the index).
 
 Multi-column indices are useful and have multiple implementations, like a concatenated index, or an R-tree.
 
@@ -193,9 +193,9 @@ As RAM grows cheaper, in-memory databases can provide better performance than tr
 
 There are two main, separate uses for databases: transaction processing or analytics.
 
-Transaction processing (also called OLTP (online transaction processing)) is generally concerned with creating, reading, and updating individual rows within the database. Things occuring within a transaction-proceessing context are generally in response to user actions, and are expected to be handled quickly.
+Transaction processing (also called OLTP (online transaction processing)) is generally concerned with creating, reading, and updating individual rows within the database. Things occurring within a transaction-processing context are generally in response to user actions, and are expected to be handled quickly.
 
-Analytics (also called OLAP (online analytics processing)) is more focuesed on the aggregation of data, and may be performed over an entire history of events, rather than a current state of things. This data is typically much larger, and worked on in bulk or through streams.
+Analytics (also called OLAP (online analytics processing)) is more focused on the aggregation of data, and may be performed over an entire history of events, rather than a current state of things. This data is typically much larger, and worked on in bulk or through streams.
 
 Data-warehousing is the practice of shipping transactional data into a larger OLAP system. This allows a business to find actionable insights without bringing down OLTP systems with their queries.
 
@@ -226,7 +226,7 @@ Thrift and Protocol Buffers offer a schema-dependent solution. They have a commo
 
 Avro uses an even more compact representation, removing fields entirely from the transmission itself. It also has rules for dealing with mismatched schemas between writer and reader, allowing things to just work in some situations.
 
-(Compared to the other two, Avro seems pretty neat! Still feels like we're getting a bit bogged down in the minutae of these different encoding formats, considering the relative age of the things.)
+(Compared to the other two, Avro seems pretty neat! Still feels like we're getting a bit bogged down in the minutiae of these different encoding formats, considering the relative age of the things.)
 
 In general, since we have tools that make schema enforcement easy without making schema evolution too difficult, we should look to utilize those tools instead of just saying "JSON is probably good enough".
 
@@ -238,8 +238,8 @@ Archived data presents another challenge, as the schema stays the same as when i
 
 Web APIs should implement similar functionality to something like Avro, but at their larger scale, supporting a range of client ages as the surface of the API changes.
 
-REST (REpresentational State Transger) as a design philosophy offers several advantages over the complexity of SOAP and the falsehoods of RPC-like (Remote Procedure Call) structure. It doesn't hide the fact that it is a network protocol. While it is generally pretty good for public APIs, The overhead associated with REST may make it less appealing for internal messaging, where something closer to RPCs may be desirable.
+REST (REpresentational State Transfer) as a design philosophy offers several advantages over the complexity of SOAP and the falsehoods of RPC-like (Remote Procedure Call) structure. It doesn't hide the fact that it is a network protocol. While it is generally pretty good for public APIs, The overhead associated with REST may make it less appealing for internal messaging, where something closer to RPCs may be desirable.
 
-Message brokers present another means of transfering data, but generally fills a different use-case than REST or RPC. Generally these systems revolve around brokers, queues, and consumers.
+Message brokers present another means of transferring data, but generally fills a different use-case than REST or RPC. Generally these systems revolve around brokers, queues, and consumers.
 
-Distributed actor frameworks present an opportunity to make RPC's transparent by creating a system of message-passing between "actors". Things can then be scaled out on a single or multiple machines with little to no changes to the application code, as the messaging model covers both scenarios.
+Distributed actor frameworks present an opportunity to make RPCs transparent by creating a system of message-passing between "actors". Things can then be scaled out on a single or multiple machines with little to no changes to the application code, as the messaging model covers both scenarios.
